@@ -1,0 +1,57 @@
+Requirements: 
+
+  You are running a car wash. Here are the rules:
+   
+  - You must use Node JS.
+  - Your car wash accepts cars and trucks.
+  - You charge $5 for cars.
+  - You charge $10 for trucks.
+  - Your car wash charges $2 extra if the truck has mud in the bed.
+  - Your car wash does not accept trucks with the bed let down.
+  - If the vehicle comes in a second time, they get 50% off.
+  - If the license plate equals 1111111, the vehicle is stolen and does not get a car wash.
+   
+  Store a transaction history of at least 10 vehicles.
+
+
+Technologies needed:
+
+  - NodeJS
+  - JavaScript ES6
+  - MySQL
+    - mysql Server (provide instructions to download)
+    - npm::mysql2
+    - migrations
+  - npm::ramda (debating on using this)
+
+
+Main Pseudo Code:
+
+  1. Prompt for car wash (y | n)
+    - If yes, continue
+    - else, exit
+  2. Prompt for license plate number (7 digit alnum)
+    - If license plate number == 1111111 exit (call po-po)
+    - Check database for license number
+    - If exists:
+      - increment wash_count
+      - Print "welcome back"
+    - If not exists, add to database
+  3. Prompt for vehicle type: (car | truck)
+      - If car:
+        - continue
+      - If truck:
+        - Prompt for mud in car (y | n)
+          - If yes: add $2
+          - If no: nothing
+      - else:
+        - Print: Vehicle type does not exist
+        - Prompt for new vehicle type
+  4. Print Itemized Subtotal and Total
+    - If license_plate.wash_count == 2
+      - add 50% discount
+  5. Prompt user to pay: (numeric float)
+    - Take cash amount, return change
+    - Print "Thank You"
+  6. Print "Drive forward!"
+

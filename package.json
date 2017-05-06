@@ -1,0 +1,22 @@
+{
+  "name": "linux_academy_car_wash",
+  "version": "1.0.0",
+  "description": "car_wash_transaction_service",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "linux",
+    "academy",
+    "car",
+    "wash"
+  ],
+  "author": "jonathan lee (jonathansmklee@gmail.com)",
+  "license": "ISC",
+  "engines": {
+    "node": "6.9.1"
+  }
+}
