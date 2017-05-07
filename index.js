@@ -2,74 +2,124 @@
 const Inquirer = require('inquirer');
 const R        = require('ramda');
 
+const Database = require('./database');
 const Helper   = require('./helper');
+const Mysql    = require('./mysql');
 const Prompt   = require('./prompt');
 
-console.log('\nWelcome to Jon\'s Friendly Car Wash!\n');
+Helper.print('Welcome to Jon\'s Friendly Car Wash!');
+
+const DISCOUNTED = true;
+
+const printExit            = () => Helper.print('Exiting.. Please pull backwards');
+const printEnter           = () => Helper.print('Purchase Complete!\n Please Drive forward!');
+const printTruckBedWarning = () => Helper.print('  Warning: All trucks must have bed door closed.');
 
 
-const exit     = () => console.log('\nExiting.. Please pull backwards\n');
-const rudeExit = () => console.log('\nExiting.. Get out of my face!\n');
-const enter    = () => console.log('\nPurchase Complete\nDrive forward!\n');
 
-
-const wake_up_car_wash_prompt = () => Prompt.carWash()
+const start = db => Prompt.carWash()
   .then(wants_car_wash => {
-    if (wants_car_wash) return check_license_plate();
-    return exit;
+    wants_car_wash ? check_license_plate(db) : printExit()
   })
 
 
 // TODO: consider moving .then logic to a handlers file
-const check_license_plate = () => Prompt.licensePlate()
+const check_license_plate = (db) => Prompt.licensePlate()
   .then(license_plate_no => {
-
-    if (!Helper.LicensePlate.isStolen(license_plate_no))
+ 
+    if (Helper.LicensePlate.isStolen(license_plate_no)) {
+      printExit();
+      return Bluebird.resolve(null);
+    } else {
       // TODO: - Need to save to database and increment wash_count
       //       - and keep license_plate record in memory for later
-      return get_vehicle_type()
+      let state = { license_plate_no };
+ 
+      return Database.getLicenseByNumber(db)(license_plate_no)
+        .tap(res => {
+          if (res)
+            state = R.merge(state, {license_plate_id: res.id});
+        })
+        .then(R.unless(R.identity, () => Database.saveLicense(db)(license_plate_no)
+          .tap(license_plate_id => { state = R.merge(state, {license_plate_id}) })
+          .tap(R.when(R.isNil, () => { throw new Error('DATABASE_SAVE_FAILED') }))
+        ))
+        .then(() => get_vehicle_type(db)(state))
 
-    console.log('\nJon\'s Car Wash is not friendly to thieves!');
-    return rudeExit()
-  })
 
-
-const get_vehicle_type = () => Prompt.vehicleType()
-  .then(vehicle_type => {
-    switch (vehicle_type) {
-      case Helper.VehicleType.TYPE.CAR:
-        get_payment();
-        break;
-      case Helper.VehicleType.TYPE.TRUCK:
-        ask_truck_questions();
-        break;
-      default:
-        console.log('\nInvalid Vehicle Type - are you a hacker?');
-        exit();
+      // get_vehicle_type(state);
     }
   })
 
-// TODO: pass a "state" object through every function
-const ask_truck_questions = () => Prompt.truckMud()
+
+const get_vehicle_type = db => state => Prompt.vehicleType()
+  .then(vehicle_type => {
+
+    const updated_state = Helper.updateState(state, { vehicle_type });
+
+    switch (vehicle_type) {
+      case Helper.VehicleType.TYPE.CAR:
+        get_payment(db)(updated_state);
+        break;
+
+      case Helper.VehicleType.TYPE.TRUCK:
+        printTruckBedWarning(); // consider changing to prompt
+        ask_truck_questions(db)(updated_state);
+        break;
+
+      default:
+        console.log('\nInvalid Vehicle Type');
+        printExit();
+    }
+  })
+
+
+const ask_truck_questions = db => state => Prompt.truckMud()
   .then(truck_has_mud => {
-    console.log('\nWARNING: Your Truck Bed Door must be closed!\n');
-    return get_payment();
+    const updated_state = Helper.updateState(state, { truck_has_mud })
+    get_payment(db)(updated_state);
   }) 
 
 
-const get_payment = () => {
-  printInvoice();
-  Prompt.payment()
-    .then(agree_to_charges => {
-      if (agree_to_charges) return enter()
-      return exit();
+const get_payment = db => state =>
+  Database.getSalesForLicenseNumber(db)(state.license_plate_no)
+    .then(R.length)
+    .then(wash_count => calculate_total(state, wash_count == 1))
+    .then(total => {
+      const updated_state = Helper.updateState(state, {total});
+      Prompt.payment(updated_state)
+        .then(agree_to_charges => {
+          if (agree_to_charges) {
+            return Database.saveSale(db)(updated_state.license_plate_id, updated_state.total)
+              .tap(R.when(R.isNil, () => { throw new Error('DATABASE_SAVE_FAILED') }))
+          } else {
+            printExit();
+            return Bluebird.resolve(null)
+          }
+        })
     })
-}
 
 
-const printInvoice = state => {
+const calculate_total = (state, discounted = false) => {
   console.log('Invoice:', state);
+
+  let total = 0;
+
+  if (state.vehicle_type == 'truck')
+    total = total + 10;
+
+  total = total + 5;
+
+  if (state.truck_has_mud)
+    total = total + 2
+
+  if (discounted)
+    total = total*.5
+
+  console.log('debugI2', total)
+
+  return total
 }
 
 
-wake_up_car_wash_prompt()
+start(Mysql.getPool());

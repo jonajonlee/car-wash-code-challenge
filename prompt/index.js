@@ -50,9 +50,9 @@ const _promptAndReturnInput = question =>
 
 
 module.exports = {
-  carWash      : _promptAndReturnInput(QUESTION.CAR_WASH);,
-  licensePlate : _promptAndReturnInput(QUESTION.LICENSE_PLATE);,
-  vehicleType  : _promptAndReturnInput(QUESTION.VEHICLE_TYPE);,
-  truckMud     : _promptAndReturnInput(QUESTION.TRUCK_MUD);,
-  payment      : _promptAndReturnInput(QUESTION.PAYMENT);,
+  carWash      : _promptAndReturnInput(QUESTION.CAR_WASH),
+  licensePlate : _promptAndReturnInput(QUESTION.LICENSE_PLATE),
+  vehicleType  : _promptAndReturnInput(QUESTION.VEHICLE_TYPE),
+  truckMud     : _promptAndReturnInput(QUESTION.TRUCK_MUD),
+  payment      : _promptAndReturnInput(QUESTION.PAYMENT),
 }

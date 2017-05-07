@@ -22,6 +22,7 @@
   "dependencies": {
     "bluebird": "^3.5.0",
     "inquirer": "^3.0.6",
+    "promise-mysql": "^3.0.1",
     "ramda": "^0.23.0"
   },
   "devDependencies": {
