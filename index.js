@@ -1,125 +1,104 @@
 'use strict';
+const Bluebird = require('bluebird');
 const Inquirer = require('inquirer');
 const R        = require('ramda');
 
 const Database = require('./database');
+const ErrorLib = require('./error');
 const Helper   = require('./helper');
 const Mysql    = require('./mysql');
 const Prompt   = require('./prompt');
 
-Helper.print('Welcome to Jon\'s Friendly Car Wash!');
-
-const DISCOUNTED = true;
+const TRUCK_MUD_COST = 2;
+const TRUCK_COST = 10;
+const CAR_COST = 5;
+const DISCOUNT = 0.5;
 
 const printExit            = () => Helper.print('Exiting.. Please pull backwards');
 const printEnter           = () => Helper.print('Purchase Complete!\n Please Drive forward!');
 const printTruckBedWarning = () => Helper.print('  Warning: All trucks must have bed door closed.');
 
 
-
-const start = db => Prompt.carWash()
-  .then(wants_car_wash => {
-    wants_car_wash ? check_license_plate(db) : printExit()
+const start = db => Bluebird.resolve({})
+  .then(Prompt.carWash(db))
+  .then(state => {
+    if (!state.wants_car_wash) ErrorLib.throwDoesntWant()
+    return Prompt.licensePlate(db)(state) 
   })
 
+  .then(state => {
+    if (Helper.LicensePlate.isStolen(state.license_plate_number)) ErrorLib.throwStolen()
+    return Database.getLicenseIdForNumber(db)(state.license_plate_number)
+      .then(license_plate_id => R.merge(state, { license_plate_id }))
+  })
 
-// TODO: consider moving .then logic to a handlers file
-const check_license_plate = (db) => Prompt.licensePlate()
-  .then(license_plate_no => {
- 
-    if (Helper.LicensePlate.isStolen(license_plate_no)) {
-      printExit();
-      return Bluebird.resolve(null);
+  .then(Prompt.vehicleType(db))
+
+  .then(state => {
+    if (state.vehicle_type == Helper.VehicleType.TYPE.TRUCK)
+      return Prompt.truckMud(db)(state)
+    return state
+  })
+
+  .then(state =>
+    Database.getSalesForLicenseNumber(db)(state.license_plate_number)
+      .then(R.length)
+      .then(wash_count => R.merge(state, { discounted: wash_count == 1 }))
+  )
+
+  .then(state => {
+    let total = 0;
+
+    console.log('')
+    console.log('\n\n############ INVOICE ############\n\n')
+
+    if (state.vehicle_type == Helper.VehicleType.TYPE.TRUCK) {
+      console.log(`TRUCK......................$${TRUCK_COST}`)
+      total = TRUCK_COST
+
+      if (state.truck_has_mud) {
+        console.log(`MUD DEEP CLEAN.............$${TRUCK_MUD_COST}`)
+        total += TRUCK_MUD_COST
+      }
+
     } else {
-      // TODO: - Need to save to database and increment wash_count
-      //       - and keep license_plate record in memory for later
-      let state = { license_plate_no };
- 
-      return Database.getLicenseByNumber(db)(license_plate_no)
-        .tap(res => {
-          if (res)
-            state = R.merge(state, {license_plate_id: res.id});
-        })
-        .then(R.unless(R.identity, () => Database.saveLicense(db)(license_plate_no)
-          .tap(license_plate_id => { state = R.merge(state, {license_plate_id}) })
-          .tap(R.when(R.isNil, () => { throw new Error('DATABASE_SAVE_FAILED') }))
-        ))
-        .then(() => get_vehicle_type(db)(state))
-
-
-      // get_vehicle_type(state);
+      console.log(`CAR.........................$${CAR_COST}`)
+      total += CAR_COST
     }
+
+    if (state.discount) {
+      console.log(`2ND PURCHASE DISCOUNT......${DISCOUNT*100}%`)
+      total = total * DISCOUNT;
+    }
+
+    console.log(`TOTAL.......................$${total}`)
+
+    console.log('\n\n#################################\n\n')
+
+    return R.merge(state, { total });
   })
 
+  .then(Prompt.getPayment(db))
 
-const get_vehicle_type = db => state => Prompt.vehicleType()
-  .then(vehicle_type => {
-
-    const updated_state = Helper.updateState(state, { vehicle_type });
-
-    switch (vehicle_type) {
-      case Helper.VehicleType.TYPE.CAR:
-        get_payment(db)(updated_state);
-        break;
-
-      case Helper.VehicleType.TYPE.TRUCK:
-        printTruckBedWarning(); // consider changing to prompt
-        ask_truck_questions(db)(updated_state);
-        break;
-
-      default:
-        console.log('\nInvalid Vehicle Type');
-        printExit();
-    }
-  })
-
-
-const ask_truck_questions = db => state => Prompt.truckMud()
-  .then(truck_has_mud => {
-    const updated_state = Helper.updateState(state, { truck_has_mud })
-    get_payment(db)(updated_state);
+  .then(state => {
+    if (!state.agreed_to_charges) ErrorLib.throwRejectCharges()
+    return Database.saveSale(db)(state.license_plate_id, state.total)
+      .then(sale_id => {
+        if (!sale_id) ErrorLib.throwDatabaseFailed()
+        return R.merge(state, { sale_id })
+      })
   }) 
 
+  .then(() => {
+    printEnter()
+    process.exit()
+  })
 
-const get_payment = db => state =>
-  Database.getSalesForLicenseNumber(db)(state.license_plate_no)
-    .then(R.length)
-    .then(wash_count => calculate_total(state, wash_count == 1))
-    .then(total => {
-      const updated_state = Helper.updateState(state, {total});
-      Prompt.payment(updated_state)
-        .then(agree_to_charges => {
-          if (agree_to_charges) {
-            return Database.saveSale(db)(updated_state.license_plate_id, updated_state.total)
-              .tap(R.when(R.isNil, () => { throw new Error('DATABASE_SAVE_FAILED') }))
-          } else {
-            printExit();
-            return Bluebird.resolve(null)
-          }
-        })
-    })
+  .catch(err => {
+    printExit();
+    process.exit()
+  })
 
 
-const calculate_total = (state, discounted = false) => {
-  console.log('Invoice:', state);
-
-  let total = 0;
-
-  if (state.vehicle_type == 'truck')
-    total = total + 10;
-
-  total = total + 5;
-
-  if (state.truck_has_mud)
-    total = total + 2
-
-  if (discounted)
-    total = total*.5
-
-  console.log('debugI2', total)
-
-  return total
-}
-
-
+Helper.print('Welcome to Jon\'s Friendly Car Wash!');
 start(Mysql.getPool());

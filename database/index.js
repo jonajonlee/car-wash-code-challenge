@@ -12,7 +12,7 @@ const saveLicense = db => license_plate_no => {
   const sql    = `INSERT INTO ${TABLE.LICENSE_PLATE} (number) VALUES (?)`;
   const params = [license_plate_no];
 
-  return db.query(sql, params).tap(x=>console.log('debugD1', x)).get('insertId');
+  return db.query(sql, params).get('insertId');
 }
 
 
@@ -45,9 +45,18 @@ const getSalesForLicenseNumber = db => license_plate_no => {
 }
 
 
+const getLicenseIdForNumber = db => license_plate_no =>
+  getLicenseByNumber(db)(license_plate_no)
+    .then(license_plate => {
+      if (license_plate) return license_plate.id
+      return saveLicense(db)(license_plate_no)
+    })
+
+
 module.exports = {
   saveLicense,
   saveSale,
   getLicenseByNumber,
   getSalesForLicenseNumber,
+  getLicenseIdForNumber,
 }
