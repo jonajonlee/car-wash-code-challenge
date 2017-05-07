@@ -14,6 +14,10 @@ const vehicleType = db => state => Question.vehicleType()
   .then(vehicle_type => R.merge(state, { vehicle_type }))
 
 
+const truckBedDoor = db => state => Question.truckBedDoor()
+  .then(truck_bed_door_closed => R.merge(state, { truck_bed_door_closed }))
+
+
 const truckMud = db => state => Question.truckMud()
   .then(truck_has_mud => R.merge(state, { truck_has_mud }))
 
@@ -26,6 +30,7 @@ module.exports = {
   carWash,
   licensePlate,
   vehicleType,
+  truckBedDoor,
   truckMud,
   getPayment,
 }

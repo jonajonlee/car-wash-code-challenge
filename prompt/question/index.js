@@ -29,6 +29,13 @@ var QUESTION = {
     filter  : Helper.VehicleType.sanitize,
   }],
 
+  TRUCK_BED_DOOR: [{
+    type    : 'confirm',
+    name    : 'input',
+    message : 'Your truck bed must be closed. Is it closed?',
+    default : true,
+  }],
+
   TRUCK_MUD: [{
     type    : 'confirm',
     name    : 'input',
@@ -53,6 +60,7 @@ module.exports = {
   carWash      : _promptAndReturnInput(QUESTION.CAR_WASH),
   licensePlate : _promptAndReturnInput(QUESTION.LICENSE_PLATE),
   vehicleType  : _promptAndReturnInput(QUESTION.VEHICLE_TYPE),
+  truckBedDoor : _promptAndReturnInput(QUESTION.TRUCK_BED_DOOR),
   truckMud     : _promptAndReturnInput(QUESTION.TRUCK_MUD),
   payment      : _promptAndReturnInput(QUESTION.PAYMENT),
 }

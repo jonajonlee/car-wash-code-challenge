@@ -1,16 +1,15 @@
 {
-  "name": "linux_academy_car_wash",
+  "name": "car_wash",
   "version": "1.0.0",
   "description": "car_wash_transaction_service",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "migrate-up": "node_modules/migrate/bin/migrate up",
+    "migrate-down": "node_modules/migrate/bin/migrate down"
   },
   "keywords": [
-    "linux",
-    "academy",
     "car",
     "wash"
   ],
@@ -26,8 +25,7 @@
     "ramda": "^0.23.0"
   },
   "devDependencies": {
-    "eslint": "^3.19.0",
-    "eslint-config-airbnb-base": "^11.1.3",
-    "eslint-plugin-import": "^2.2.0"
+    "migrate": "^0.2.3",
+    "mysql2": "^1.2.0"
   }
 }

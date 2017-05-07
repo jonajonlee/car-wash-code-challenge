@@ -36,7 +36,12 @@ const start = db => Bluebird.resolve({})
 
   .then(state => {
     if (state.vehicle_type == Helper.VehicleType.TYPE.TRUCK)
-      return Prompt.truckMud(db)(state)
+      return Prompt.truckBedDoor(db)(state)
+        .then(state => {
+          if (!state.truck_bed_door_closed) ErrorLib.throwTruckBedOpen()
+          return Prompt.truckMud(db)(state)
+
+        })
     return state
   })
 
@@ -66,12 +71,12 @@ const start = db => Bluebird.resolve({})
       total += CAR_COST
     }
 
-    if (state.discount) {
+    if (state.discounted) {
       console.log(`2ND PURCHASE DISCOUNT......${DISCOUNT*100}%`)
       total = total * DISCOUNT;
     }
 
-    console.log(`TOTAL.......................$${total}`)
+    console.log(`\nTOTAL.......................$${total}`)
 
     console.log('\n\n#################################\n\n')
 
