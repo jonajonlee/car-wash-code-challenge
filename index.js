@@ -1,9 +1,9 @@
 'use strict';
 const Inquirer = require('inquirer');
 const R        = require('ramda');
-const Helper   = require('./helper');
 
-const Prompt = require('./prompt');
+const Helper   = require('./helper');
+const Prompt   = require('./prompt');
 
 console.log('\nWelcome to Jon\'s Friendly Car Wash!\n');
 
@@ -53,7 +53,6 @@ const get_vehicle_type = () => Prompt.vehicleType()
 const ask_truck_questions = () => Prompt.truckMud()
   .then(truck_has_mud => {
     console.log('\nWARNING: Your Truck Bed Door must be closed!\n');
-    console.log('truck has mud! +$2!');
     return get_payment();
   }) 
 

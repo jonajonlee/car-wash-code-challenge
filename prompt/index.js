@@ -44,26 +44,15 @@ var QUESTION = {
   }]
 }
 
-// TODO: Consider abstracting
-const carWash = () =>
-  Inquirer.prompt(QUESTION.CAR_WASH).then(R.prop('input'));
 
-const licensePlate = () =>
-  Inquirer.prompt(QUESTION.LICENSE_PLATE).then(R.prop('input'));
+const _promptAndReturnInput = question =>
+  () => Inquirer.prompt(question).then(R.prop('input'));
 
-const vehicleType = () =>
-  Inquirer.prompt(QUESTION.VEHICLE_TYPE).then(R.prop('input'));
-
-const truckMud = () =>
-  Inquirer.prompt(QUESTION.TRUCK_MUD).then(R.prop('input'));
-
-const payment = () =>
-  Inquirer.prompt(QUESTION.PAYMENT).then(R.prop('input'));
 
 module.exports = {
-  carWash,
-  licensePlate,
-  vehicleType,
-  truckMud,
-  payment,
+  carWash      : _promptAndReturnInput(QUESTION.CAR_WASH);,
+  licensePlate : _promptAndReturnInput(QUESTION.LICENSE_PLATE);,
+  vehicleType  : _promptAndReturnInput(QUESTION.VEHICLE_TYPE);,
+  truckMud     : _promptAndReturnInput(QUESTION.TRUCK_MUD);,
+  payment      : _promptAndReturnInput(QUESTION.PAYMENT);,
 }
