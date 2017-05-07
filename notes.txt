@@ -20,9 +20,12 @@ Technologies needed:
   - JavaScript ES6
   - MySQL
     - mysql Server (provide instructions to download)
-    - npm::mysql2
+    - npm::promise-mysql
     - migrations
+    - maybe config (env config too)
   - npm::ramda (debating on using this)
+  - npm::bluebird
+  - npm::eslint (dev-dependency)
 
 
 Main Pseudo Code:
@@ -44,6 +47,7 @@ Main Pseudo Code:
         - Prompt for mud in car (y | n)
           - If yes: add $2
           - If no: nothing
+        - Ensure that the truck bed is up
       - else:
         - Print: Vehicle type does not exist
         - Prompt for new vehicle type
